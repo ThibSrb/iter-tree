@@ -4,11 +4,13 @@
 
 //! It provide two types of tree: 
 
-//! - The default one, [`Tree`](tree::Tree) is based on [`Vec`] from the standard librayry. 
+//! - The default one, [`Tree`](tree::Tree) is based on [`Vec`] from the standard library. 
 
 //! - The second one, [`TreeDeque`](tree_deque::TreeDeque) is based on [`VecDeque`](std::collections::VecDeque) from the standard libray. <br/> To get this one, you have to activate the `deque` feature flag.
 //!
-//! In the future, the goal would be to provide other types of Trees, notably some that separate the token that inited and terminated a branch.
+//! The goals for the future of this crate includes but are not limited to :
+//! - Providing other types of Trees, notably some that separate the item that inited and terminated a branch.
+//! - Adding more methods to build Trees such as for example a `tree_map` and `tree_deque_map` method that would map the item before including it in the Tree.
 //! 
 //! ## Usage
 //! 
@@ -33,6 +35,8 @@
 //! ### Example
 //! 
 //! ```rust
+//! use iter_tree::prelude::*;
+//! 
 //! let mut depth = 0;
 //! 
 //! let tree = "a+(b+c)+d"
@@ -101,10 +105,13 @@
 //! Here is an example of how this can be applied :
 //! 
 //! ```rust
+//! use iter_tree::prelude::*;
+//! 
+//! #[derive(Default)]
 //! struct StackController<T> {
 //!     stack: Vec<T>,
 //! }
-
+//! 
 //! impl<T> StackController<T> {
 //!     pub fn is_empty(self) -> bool {
 //!         self.stack.is_empty()
@@ -162,7 +169,7 @@
 //! assert!(!controller.is_empty())
 //! ```
 
-mod controller;
+pub mod controller;
 
 #[cfg(feature = "deque")]
 pub mod tree_deque;

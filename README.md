@@ -4,11 +4,16 @@ This library provide an easy way to transform iterator into tree. This can be us
 
 It provide two types of tree: 
 
-- The default one, `Tree` is based on `Vec` from the standard librayry. 
+- The default one, `Tree` is based on `Vec` from the standard library. 
 
 - The second one is based on `VecDeque` from the standard libray. To get this one you have to activate the `deque` feature flag.
 
 In the future, the goal would be to provide other types of Trees, notably some that separate the token that inited and terminated a branch.
+
+The goals for the future of this crate includes but are not limited to :
+
+- Providing other types of Trees, notably some that separate the item that inited and terminated a branch.
+- Adding more methods to build Trees such as for example a `tree_map` and `tree_deque_map` method that would map the item before including it in the Tree.
 
 ## Usage
 
@@ -33,6 +38,8 @@ This enum has three variants :
 ### Example
 
 ```rust
+use iter_tree::prelude::*;
+
 let mut depth = 0;
 
 let tree = "a+(b+c)+d"
@@ -101,6 +108,8 @@ Additionally you can create a struct that implements the `Controller` trait to r
 Here is an example of how this can be applied :
 
 ```rust
+use iter_tree::prelude::*;
+
 struct StackController<T> {
     stack: Vec<T>,
 }

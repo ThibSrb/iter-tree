@@ -28,7 +28,7 @@ This enum has three variants :
 > When filling a branch started with `BranchControl::Start`, no crash or error will happens if the iterator ends before encountering the corresponding `BranchControl::End`.
 > Similarly, any unmatched `BranchControl::End` will simply be ignored.
 > 
-> If you want check for these kind of situations, you can use a trick such as the depth counter showed for example.
+> If you want check for these kind of situations, you can use a trick such as the depth counter showed in the below example.
 
 ### Example
 

@@ -12,7 +12,7 @@ In the future, the goal would be to provide other types of Trees, notably some t
 
 ## Usage
 
-The creattion of a tree is controlled with the `BranchControl` enum.
+The creation of a tree is controlled with the `BranchControl` enum.
 This enum has three variants :
 
 - BranchControl::Start
@@ -28,7 +28,7 @@ This enum has three variants :
 > When filling a branch started with `BranchControl::Start`, no crash or error will happens if the iterator ends before encountering the corresponding `BranchControl::End`.
 > Similarly, any unmatched `BranchControl::End` will simply be ignored.
 > 
-> If you want check for these kind of situations, you can use a trick such as the depth counter showed in the below example.
+> If you want to check for these kind of situations, you can use a trick such as the depth counter showed in the below example.
 
 ### Example
 

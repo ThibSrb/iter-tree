@@ -1,0 +1,21 @@
+[package]
+name = "iter-tree"
+version = "0.1.0"
+edition = "2021"
+license-file = "LICENSE"
+
+description = "Convert iterators to tree structures"
+repository = "https://github.com/ThibSrb/iter-tree"
+readme = "README.md"
+
+keywords = ["iterator", "data-structure"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[features]
+deque = []
+vec = []
+
+default = ["vec"]

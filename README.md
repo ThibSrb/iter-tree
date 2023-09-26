@@ -1,14 +1,12 @@
 # iter-tree
 
-This library provide an easy way to transform iterator into tree. This can be useful when building simple parsers to convert a stream of token into a tree of token.
+This library provide an easy way to transform iterators into trees. This can be useful when building simple parsers to convert a stream of token into a tree of token.
 
 It provide two types of tree: 
 
 - The default one, `Tree` is based on `Vec` from the standard library. 
 
-- The second one is based on `VecDeque` from the standard libray. To get this one you have to activate the `deque` feature flag.
-
-In the future, the goal would be to provide other types of Trees, notably some that separate the token that inited and terminated a branch.
+- The second one is based on `VecDeque` from the standard libray. To get this one, you have to activate the `deque` feature flag.
 
 The goals for the future of this crate includes but are not limited to :
 

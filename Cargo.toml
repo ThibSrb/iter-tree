@@ -1,9 +1,8 @@
 [package]
 name = "iter-tree"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 license = "MIT"
-license-file = "LICENSE"
 
 description = "Convert iterators to tree structures"
 repository = "https://github.com/ThibSrb/iter-tree"

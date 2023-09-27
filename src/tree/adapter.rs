@@ -1,16 +1,5 @@
-use crate::controller::*;
-
-#[derive(Debug)]
-pub enum Tree<T> {
-    Leaf(T),
-    Branch(Vec<Tree<T>>),
-}
-
-impl<Item> FromIterator<Tree<Item>> for Tree<Item> {
-    fn from_iter<T: IntoIterator<Item = Tree<Item>>>(iter: T) -> Self {
-        Tree::Branch(Vec::from_iter(iter))
-    }
-}
+use super::Tree;
+use crate::controller::{BranchControl, Controller};
 
 pub struct TreeAdapter<I, T, C>
 where

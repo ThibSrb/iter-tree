@@ -181,7 +181,7 @@
 
 pub mod controller;
 
-#[cfg(feature = "deque")]
+#[cfg(any(feature = "deque", doc))]
 pub mod tree_deque;
 
 #[cfg(feature = "vec")]

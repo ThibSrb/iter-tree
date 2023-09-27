@@ -4,10 +4,11 @@ This library provides an easy way to convert between iterators and tree structur
 
 It extends iterators with two functions : 
 
-- `tree` that maps the iterator to an iterator of `Tree` that can be collected to a `Tree`.
+- `tree` that maps the iterator to an iterator of Tree that can be collected to a `Tree`.
 
 - `tree_deque` that maps the iterator to an iterator of `TreeDeque` that can be collected to a `TreeDeque`.
-  To get this one, you have to activate the `deque` feature flag.
+  
+   To get this one, you have to activate the `deque` feature flag.
 
 Both type of trees implement the `IntoIterator` trait.
 
@@ -16,19 +17,19 @@ Both type of trees implement the `IntoIterator` trait.
 The creation of a tree is controlled with the `BranchControl` enum.
 This enum has three variants :
 
-- BranchControl::Start
+- `BranchControl::Start`
   - Is used to start nesting the items of the iterator into a new branch.
-- BranchControl::Continue
+- `BranchControl::Continue`
   - Is used to keep the item in the same branch as the previous ones
-- BranchControl::End
+- `BranchControl::End`
   - Is used to get back up to the previous branch to put the next items.
 
-> Note:
-> 
-> When filling a branch started with `BranchControl::Start`, no crash or error will happens if the iterator ends before encountering the corresponding `BranchControl::End`.
-> Similarly, any unmatched `BranchControl::End` will simply be ignored.
-> 
-> If you want to check for these kind of situations, you can use a trick such as the depth counter showed in the below example.
+Note:
+
+When filling a branch started with `BranchControl::Start`, no crash or error will happens if the iterator ends before encountering the corresponding `BranchControl::End`.
+Similarly, any unmatched `BranchControl::End` will simply be ignored.
+
+If you want to check for these kind of situations, you can use a trick such as the depth counter showed in the below example.
 
 ## Example
 
@@ -39,7 +40,7 @@ let mut depth = 0;
 
 let before = String::from("a+(b+c)+d");
 
-let tree = before
+let tree: Tree<char> = before
     .chars()
     .into_iter()
     .tree(|&item: &char| match item {
@@ -53,7 +54,7 @@ let tree = before
         },
         _ => BranchControl::Continue,
     })
-    .collect::<Tree<char>>();
+    .collect();
 
 println!("{tree:#?}");
 
@@ -100,7 +101,7 @@ Branch(
 )
 ```
 
-#### Controllers
+#### `Controller`s
 
 Additionally you can create a struct that implements the `Controller` trait to replace the closure from the previous example.
 

@@ -1,17 +1,15 @@
 # iter-tree
 
-This library provide an easy way to transform iterators into trees. This can be useful when building simple parsers to convert a stream of token into a tree of token.
+This library provides an easy way to convert between iterators and tree structures in both directions. This can be useful when building simple parsers to convert a stream of token into a tree of token.
 
-It provide two types of tree: 
+It extends iterators with two functions : 
 
-- The default one, `Tree` is based on `Vec` from the standard library. 
+- `tree` that maps the iterator to an iterator of `Tree` that can be collected to a `Tree`.
 
-- The second one is based on `VecDeque` from the standard libray. To get this one, you have to activate the `deque` feature flag.
+- `tree_deque` that maps the iterator to an iterator of `TreeDeque` that can be collected to a `TreeDeque`.
+  To get this one, you have to activate the `deque` feature flag.
 
-The goals for the future of this crate includes but are not limited to :
-
-- Providing other types of Trees, notably some that separate the item that inited and terminated a branch.
-- Adding more methods to build Trees such as for example a `tree_map` and `tree_deque_map` method that would map the item before including it in the Tree.
+Both type of trees implement the `IntoIterator` trait.
 
 ## Usage
 
@@ -27,38 +25,41 @@ This enum has three variants :
 
 > Note:
 > 
-> 
 > When filling a branch started with `BranchControl::Start`, no crash or error will happens if the iterator ends before encountering the corresponding `BranchControl::End`.
 > Similarly, any unmatched `BranchControl::End` will simply be ignored.
 > 
 > If you want to check for these kind of situations, you can use a trick such as the depth counter showed in the below example.
 
-### Example
+## Example
 
 ```rust
 use iter_tree::prelude::*;
 
 let mut depth = 0;
 
-let tree = "a+(b+c)+d"
+let before = String::from("a+(b+c)+d");
+
+let tree = before
     .chars()
     .into_iter()
     .tree(|&item: &char| match item {
         '(' => {
             depth += 1;
             BranchControl::Start
-        }
-        ')' => {
+        },
+        ')' => { 
             depth -= 1;
             BranchControl::End
-        }
+        },
         _ => BranchControl::Continue,
     })
     .collect::<Tree<char>>();
 
-println!("{tree:?}");
+println!("{tree:#?}");
 
-assert_eq!(0, depth);
+let after: String = tree.into_iter().collect();
+
+assert_eq!(before, after);
 ```
 
 ```bash
@@ -99,15 +100,16 @@ Branch(
 )
 ```
 
-### To go further
+#### Controllers
 
 Additionally you can create a struct that implements the `Controller` trait to replace the closure from the previous example.
- 
+
 Here is an example of how this can be applied :
 
 ```rust
 use iter_tree::prelude::*;
 
+#[derive(Default)]
 struct StackController<T> {
     stack: Vec<T>,
 }
@@ -167,3 +169,11 @@ let _b = "<(>)".chars().tree(&mut controller).collect::<Tree<_>>();
 
 assert!(!controller.is_empty())
 ```
+
+## What's next ?
+
+The goals for the future of this crate includes but are not limited to :
+
+- Adding more methods to build Trees such as for example a `tree_map` and `tree_deque_map` method that would map the item before including it in the Tree.
+
+- Providing other types of Trees, notably some that separate the item that inited and terminated a branch.

@@ -1,7 +1,7 @@
-pub use crate::controller::*;
+pub use crate::controller::{BranchControl, Controller};
 
 #[cfg(feature = "vec")]
-pub use crate::tree::*;
+pub use crate::tree::{Tree, Treeable};
 
 #[cfg(feature = "deque")]
-pub use crate::tree_deque::*;
+pub use crate::tree_deque::{TreeDeque, TreeDequeable};

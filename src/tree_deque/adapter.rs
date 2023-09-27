@@ -1,18 +1,7 @@
 use std::collections::VecDeque;
 
-use crate::controller::*;
-
-#[derive(Debug)]
-pub enum TreeDeque<T> {
-    Leaf(T),
-    Branch(VecDeque<TreeDeque<T>>),
-}
-
-impl<Item> FromIterator<TreeDeque<Item>> for TreeDeque<Item> {
-    fn from_iter<T: IntoIterator<Item = TreeDeque<Item>>>(iter: T) -> Self {
-        TreeDeque::Branch(VecDeque::from_iter(iter))
-    }
-}
+use super::TreeDeque;
+use crate::controller::{BranchControl, Controller};
 
 pub struct TreeDequeAdapter<I, T, C>
 where

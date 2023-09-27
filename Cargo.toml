@@ -1,10 +1,10 @@
 [package]
 name = "iter-tree"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 license = "MIT"
 
-description = "Convert iterators to tree structures"
+description = "Convert between iterators and tree structures in both directions"
 repository = "https://github.com/ThibSrb/iter-tree"
 readme = "README.md"
 

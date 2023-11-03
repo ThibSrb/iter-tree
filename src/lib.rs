@@ -2,10 +2,10 @@
 //!
 //! This library provides an easy way to convert between iterators and tree structures in both directions. This can be useful when building simple parsers to convert a stream of token into a tree of token.
 //!
-//! It extends iterators with two functions : 
-//! 
+//! It extends iterators with two functions :
+//!
 //! - [`tree`](tree::Treeable::tree) that maps the iterator to an iterator of [`Tree`](tree::Tree) that can be collected to a [`Tree`](tree::Tree).
-//! 
+//!
 //! - [`tree_deque`](tree_deque::TreeDequeable::tree_deque) that maps the iterator to an iterator of [`TreeDeque`](tree_deque::TreeDeque) that can be collected to a [`TreeDeque`](tree_deque::TreeDeque).
 //!   
 //!    To get this one, you have to activate the `deque` feature flag.
@@ -48,7 +48,7 @@
 //!             depth += 1;
 //!             BranchControl::Start
 //!         },
-//!         ')' => { 
+//!         ')' => {
 //!             depth -= 1;
 //!             BranchControl::End
 //!         },
@@ -180,18 +180,16 @@
 //! - Providing other types of Trees, notably some that separate the item that inited and terminated a branch.
 
 pub mod controller;
-
-#[cfg(any(feature = "deque", doc))]
-pub mod tree_deque;
-
-#[cfg(feature = "vec")]
 pub mod tree;
 
-pub mod prelude;
+mod vec;
+
+pub use controller::{BranchControl, Controller};
+pub use tree::{Tree, Treeable};
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::{BranchControl, Controller};
 
     #[derive(Debug, Default)]
     struct StackController<T> {
@@ -240,16 +238,14 @@ mod tests {
     #[cfg(feature = "vec")]
     mod tree {
         use crate::{
-            controller::BranchControl,
-            tests::StackController,
-            tree::{Tree, Treeable},
+            controller::BranchControl, tests::StackController, tree::Treeable, vec::VecTree,
         };
 
         #[test]
         fn basic() {
             let mut depth = 0;
 
-            let tree = "a+(b+c)+d"
+            let tree: VecTree<char> = "a+(b+c)+d"
                 .chars()
                 .into_iter()
                 .tree(|&item: &char| match item {
@@ -263,7 +259,7 @@ mod tests {
                     }
                     _ => BranchControl::Continue,
                 })
-                .collect::<Tree<char>>();
+                .into();
 
             println!("{tree:#?}");
 
@@ -274,10 +270,7 @@ mod tests {
         fn correct() {
             let mut controller = StackController::default();
 
-            let _1 = "< ( < > ) >"
-                .chars()
-                .tree(&mut controller)
-                .collect::<Tree<char>>();
+            let _1: VecTree<char> = "< ( < > ) >".chars().tree(&mut controller).into();
 
             assert!(controller.is_empty());
         }
@@ -286,7 +279,7 @@ mod tests {
         fn incorrect() {
             let mut controller = StackController::default();
 
-            let _b = "<(>)".chars().tree(&mut controller).collect::<Tree<_>>();
+            let _b: VecTree<char> = "<(>)".chars().tree(&mut controller).into();
 
             assert!(!controller.is_empty());
         }
@@ -295,7 +288,7 @@ mod tests {
         fn into_iter() {
             let before = String::from("a(b(c)d)e");
 
-            let tree = before
+            let tree: VecTree<char> = before
                 .chars()
                 .into_iter()
                 .tree(|&item: &char| match item {
@@ -303,7 +296,7 @@ mod tests {
                     ')' => BranchControl::End,
                     _ => BranchControl::Continue,
                 })
-                .collect::<Tree<char>>();
+                .into();
 
             println!("{tree:#?}");
 
@@ -318,7 +311,7 @@ mod tests {
 
             let before = String::from("<(>)");
 
-            let tree = before.chars().tree(&mut parser).collect::<Tree<_>>();
+            let tree: VecTree<char> = before.chars().tree(&mut parser).into();
 
             let after: String = tree.into_iter().collect();
 

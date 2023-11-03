@@ -1,26 +1,42 @@
 mod adapter;
 mod into_iter;
+
+use std::{fmt::Debug, marker::PhantomData};
+
+pub(crate) use adapter::TreeAdapter;
+pub(crate) use into_iter::{IntoIter, BranchIntoIter, BranchIterState};
+
 pub use adapter::Treeable;
-use into_iter::IntoIter;
+
+pub trait TreeList<T>: IntoIterator<Item = T> {
+    fn new() -> Self;
+    fn init_with(value: T) -> Self;
+    fn push(&mut self, value: T);
+    fn len(&self) -> usize;
+    fn pop(&mut self) -> Option<T>;
+}
+
+pub trait TreeWrapper<Item, List>: Sized
+where
+    List: TreeList<Tree<Item, List>>,
+{
+    type Item;
+
+    fn new(value: Tree<Item, List>) -> Self;
+    fn take(self) -> Tree<Item, List>;
+}
 
 #[derive(Debug)]
-pub enum Tree<T> {
+pub enum Tree<T, Container>
+where
+    Container: TreeList<Self>,
+{
     Leaf(T),
-    Branch(Vec<Tree<T>>),
+    Branch(Container),
 }
 
-impl<Item> FromIterator<Tree<Item>> for Tree<Item> {
-    fn from_iter<T: IntoIterator<Item = Tree<Item>>>(iter: T) -> Self {
-        Tree::Branch(Vec::from_iter(iter))
-    }
-}
-
-impl<Item> IntoIterator for Tree<Item> {
-    type Item = Item;
-
-    type IntoIter = IntoIter<Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.into()
-    }
+#[derive(Debug)]
+pub struct TreeListBackend<Item, List> {
+    pub(crate) list: List,
+    pub(crate) marker: PhantomData<Item>,
 }

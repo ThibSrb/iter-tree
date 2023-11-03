@@ -1,26 +1,38 @@
-use std::iter::{once, Once};
+use std::{
+    iter::{once, Once},
+    marker::PhantomData,
+};
 
-use super::Tree;
+use super::{Tree, TreeList};
 
-pub enum IntoIter<T> {
-    Unique(Once<T>),
-    Multiple(BranchIntoIter<T>),
+pub enum IntoIter<Item, Container>
+where
+    Container: TreeList<Tree<Item, Container>>,
+{
+    Unique(Once<Item>),
+    Multiple(BranchIntoIter<Item, Container>),
 }
 
-impl<T> From<Tree<T>> for IntoIter<T> {
-    fn from(value: Tree<T>) -> Self {
+impl<Item, Container> From<Tree<Item, Container>> for IntoIter<Item, Container>
+where
+    Container: TreeList<Tree<Item, Container>>,
+{
+    fn from(value: Tree<Item, Container>) -> Self {
         match value {
             Tree::Leaf(value) => Self::Unique(once(value)),
             Tree::Branch(multiple) => Self::Multiple(BranchIntoIter {
-                state: BranchIterState::Normal,
+                state: BranchIterState::Normal(PhantomData),
                 iter: multiple.into_iter(),
             }),
         }
     }
 }
 
-impl<T> Iterator for IntoIter<T> {
-    type Item = T;
+impl<Item, Container> Iterator for IntoIter<Item, Container>
+where
+    Container: TreeList<Tree<Item, Container>>,
+{
+    type Item = Item;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {
@@ -30,29 +42,38 @@ impl<T> Iterator for IntoIter<T> {
     }
 }
 
-pub enum BranchIterState<T> {
-    Normal,
-    Recursion(Box<BranchIntoIter<T>>),
+pub enum BranchIterState<Item, Container>
+where
+    Container: TreeList<Tree<Item, Container>>,
+{
+    Normal(PhantomData<Item>),
+    Recursion(Box<BranchIntoIter<Item, Container>>),
 }
 
-pub struct BranchIntoIter<T> {
-    state: BranchIterState<T>,
-    iter: std::vec::IntoIter<Tree<T>>,
+pub struct BranchIntoIter<Item, Container>
+where
+    Container: TreeList<Tree<Item, Container>>,
+{
+    pub(crate) state: BranchIterState<Item, Container>,
+    pub(crate) iter: Container::IntoIter,
 }
 
-impl<T> Iterator for BranchIntoIter<T> {
-    type Item = T;
+impl<Item, Container> Iterator for BranchIntoIter<Item, Container>
+where
+    Container: TreeList<Tree<Item, Container>>,
+{
+    type Item = Item;
 
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.state {
-            BranchIterState::Normal => {
+            BranchIterState::Normal(_) => {
                 let next = self.iter.next()?;
 
                 match next {
                     Tree::Leaf(value) => Some(value),
                     Tree::Branch(trees) => {
                         self.state = BranchIterState::Recursion(Box::new(Self {
-                            state: BranchIterState::Normal,
+                            state: BranchIterState::Normal(PhantomData),
                             iter: trees.into_iter(),
                         }));
                         self.next()
@@ -64,7 +85,7 @@ impl<T> Iterator for BranchIntoIter<T> {
 
                 match next {
                     None => {
-                        self.state = BranchIterState::Normal;
+                        self.state = BranchIterState::Normal(PhantomData);
                         self.next()
                     }
                     value => value,

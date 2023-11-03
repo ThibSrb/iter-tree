@@ -1,26 +1,31 @@
-use super::Tree;
+use std::marker::PhantomData;
+
+use super::{Tree, TreeList};
 use crate::controller::{BranchControl, Controller};
 
-pub struct TreeAdapter<I, T, C>
+pub struct TreeAdapter<Item, Iter, Control, List>
 where
-    I: Iterator<Item = T>,
-    C: Controller<T>,
+    Iter: Iterator<Item = Item>,
+    Control: Controller<Item>,
+    List: TreeList<Tree<Item, List>>,
 {
-    pub(crate) branching_controller: C,
-    pub(crate) iterator: I,
+    pub(crate) branching_controller: Control,
+    pub(crate) iterator: Iter,
+    marker: PhantomData<List>,
 }
 
-impl<I, T, C> TreeAdapter<I, T, C>
+impl<Iter, Item, Control, Cont> TreeAdapter<Item, Iter, Control, Cont>
 where
-    I: Iterator<Item = T>,
-    C: Controller<T>,
+    Iter: Iterator<Item = Item>,
+    Control: Controller<Item>,
+    Cont: TreeList<Tree<Item, Cont>>,
 {
-    fn branch_control(&mut self, item: &T) -> BranchControl {
+    fn branch_control(&mut self, item: &Item) -> BranchControl {
         self.branching_controller.control_branch(item)
     }
 
-    fn sub_branch(&mut self, item: T) -> Tree<T> {
-        let mut branches = Vec::<Tree<T>>::from([Tree::Leaf(item)]);
+    fn sub_branch(&mut self, item: Item) -> Tree<Item, Cont> {
+        let mut branches = Cont::init_with(Tree::Leaf(item));
 
         loop {
             let next = match self.iterator.next() {
@@ -42,12 +47,13 @@ where
     }
 }
 
-impl<I, T, C> Iterator for TreeAdapter<I, T, C>
+impl<Iter, Item, Control, Cont> Iterator for TreeAdapter<Item, Iter, Control, Cont>
 where
-    I: Iterator<Item = T>,
-    C: Controller<T>,
+    Iter: Iterator<Item = Item>,
+    Control: Controller<Item>,
+    Cont: TreeList<Tree<Item, Cont>>,
 {
-    type Item = Tree<T>;
+    type Item = Tree<Item, Cont>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let next = self.iterator.next()?;
@@ -59,16 +65,18 @@ where
     }
 }
 
-pub trait Treeable<T>: Iterator<Item = T> + Sized {
-    fn tree<C>(self, branching_controller: C) -> TreeAdapter<Self, T, C>
+pub trait Treeable<Iter, Container>: Iterator<Item = Iter> + Sized {
+    fn tree<C>(self, branching_controller: C) -> TreeAdapter<Iter, Self, C, Container>
     where
-        C: Controller<T>,
+        C: Controller<Iter>,
+        Container: TreeList<Tree<Iter, Container>>,
     {
         TreeAdapter {
             branching_controller,
             iterator: self,
+            marker: PhantomData,
         }
     }
 }
 
-impl<I, T> Treeable<T> for I where I: Iterator<Item = T> + Sized {}
+impl<I, T, Container> Treeable<T, Container> for I where I: Iterator<Item = T> + Sized {}

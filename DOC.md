@@ -4,24 +4,24 @@ This crate provides an easy way to convert between iterators and tree structures
 
 It extends iterators with two functions : 
 
-- `into_tree` that transforms an iterator into a `Tree`.
+- [`into_tree`](`IntoTreeExt::into_tree`) that transforms an iterator into a [`Tree`].
 
-- `into_tree_deque`that transforms an iterator into a `TreeDeque`.
+- [`into_tree_deque`](`IntoTreeDequeExt::into_tree_deque`) that transforms an iterator into a [`TreeDeque`].
   
    To get this one, you have to activate the `deque` feature flag.
 
-Both type of trees implement the `IntoIterator` trait.
+Both type of trees implement the [`IntoIterator`] trait.
 
 ## Usage
 
-The creation of a tree is controlled with the `Nesting` enum.
+The creation of a tree is controlled with the [`Nesting`] enum.
 This enum has three variants :
 
-- `Nesting::Increase`
+- [`Nesting::Increase`]
   - Is used to start nesting the items of the iterator into a new node.
-- `Nesting::Maintain`
+- [`Nesting::Maintain`]
   - Is used to keep the item in the same node as the previous ones
-- `Nesting::Decrease`
+- [`Nesting::Decrease`]
   - Is used to get back up to the previous node to put the next items. If there is no previous branch a new parent branch is then created.
 
 If you want to check for these kind of situations, you can use a trick such as the depth counter showed in the below example.
@@ -94,9 +94,9 @@ Node(
 )
 ```
 
-#### `NestingFunction`s
+#### [`NestingFunction`]s
 
-Additionally you can create a struct that implements the `NestingFunction` trait to replace the closure from the previous example.
+Additionally you can create a struct that implements the [`NestingFunction`] trait to replace the closure from the previous example.
 
 Here is an example of how this can be applied :
 

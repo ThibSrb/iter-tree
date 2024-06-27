@@ -1,7 +1,7 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::unwrap_used)]
 #![allow(clippy::module_name_repetitions, clippy::ignored_unit_patterns)]
 #![forbid(unsafe_code)]
-#![doc = include_str!("../README.md")]
+#![doc = include_str!("../DOC.md")]
 
 mod nesting_function;
 #[cfg(feature = "vec")]

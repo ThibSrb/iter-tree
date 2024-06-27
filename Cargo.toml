@@ -1,6 +1,6 @@
 [package]
 name = "iter-tree"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 license = "MIT"
 
@@ -9,6 +9,9 @@ repository = "https://github.com/ThibSrb/iter-tree"
 readme = "README.md"
 
 keywords = ["iterator", "data-structure"]
+
+[package.metadata.docs.rs]
+all-features = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

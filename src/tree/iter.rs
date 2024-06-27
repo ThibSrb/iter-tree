@@ -4,15 +4,15 @@ use super::Tree;
 
 pub enum IntoIter<T> {
     Unique(Once<T>),
-    Multiple(BranchIntoIter<T>),
+    Multiple(NoneIntoIter<T>),
 }
 
 impl<T> From<Tree<T>> for IntoIter<T> {
     fn from(value: Tree<T>) -> Self {
         match value {
             Tree::Leaf(value) => Self::Unique(once(value)),
-            Tree::Branch(multiple) => Self::Multiple(BranchIntoIter {
-                state: BranchIterState::Normal,
+            Tree::Node(multiple) => Self::Multiple(NoneIntoIter {
+                state: NodeIterState::Normal,
                 iter: multiple.into_iter(),
             }),
         }
@@ -24,52 +24,62 @@ impl<T> Iterator for IntoIter<T> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {
-            IntoIter::Unique(once) => once.next(),
-            IntoIter::Multiple(multiple) => multiple.next(),
+            Self::Unique(once) => once.next(),
+            Self::Multiple(multiple) => multiple.next(),
         }
     }
 }
 
-pub enum BranchIterState<T> {
+pub enum NodeIterState<T> {
     Normal,
-    Recursion(Box<BranchIntoIter<T>>),
+    Recursion(Box<NoneIntoIter<T>>),
 }
 
-pub struct BranchIntoIter<T> {
-    state: BranchIterState<T>,
+pub struct NoneIntoIter<T> {
+    state: NodeIterState<T>,
     iter: std::vec::IntoIter<Tree<T>>,
 }
 
-impl<T> Iterator for BranchIntoIter<T> {
+impl<T> Iterator for NoneIntoIter<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.state {
-            BranchIterState::Normal => {
+            NodeIterState::Normal => {
                 let next = self.iter.next()?;
 
                 match next {
                     Tree::Leaf(value) => Some(value),
-                    Tree::Branch(trees) => {
-                        self.state = BranchIterState::Recursion(Box::new(Self {
-                            state: BranchIterState::Normal,
+                    Tree::Node(trees) => {
+                        self.state = NodeIterState::Recursion(Box::new(Self {
+                            state: NodeIterState::Normal,
                             iter: trees.into_iter(),
                         }));
                         self.next()
                     }
                 }
             }
-            BranchIterState::Recursion(rec) => {
+            NodeIterState::Recursion(rec) => {
                 let next = rec.next();
 
                 match next {
                     None => {
-                        self.state = BranchIterState::Normal;
+                        self.state = NodeIterState::Normal;
                         self.next()
                     }
                     value => value,
                 }
             }
         }
+    }
+}
+
+impl<Item> IntoIterator for Tree<Item> {
+    type Item = Item;
+
+    type IntoIter = IntoIter<Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.into()
     }
 }

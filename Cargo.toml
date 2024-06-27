@@ -1,6 +1,6 @@
 [package]
 name = "iter-tree"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 license = "MIT"
 
@@ -18,4 +18,4 @@ keywords = ["iterator", "data-structure"]
 deque = []
 vec = []
 
-default = ["vec"]
+default = ["vec", "deque"]

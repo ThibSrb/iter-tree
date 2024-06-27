@@ -1,28 +1,12 @@
-mod adapter;
-mod into_iter;
+mod into_tree_deque;
+mod iter;
 
-pub use adapter::TreeDequeable;
-use into_iter::IntoIter;
 use std::collections::VecDeque;
 
-#[derive(Debug)]
-pub enum TreeDeque<T> {
-    Leaf(T),
-    Branch(VecDeque<TreeDeque<T>>),
-}
+pub use into_tree_deque::IntoTreeDequeExt;
 
-impl<Item> FromIterator<TreeDeque<Item>> for TreeDeque<Item> {
-    fn from_iter<T: IntoIterator<Item = TreeDeque<Item>>>(iter: T) -> Self {
-        TreeDeque::Branch(VecDeque::from_iter(iter))
-    }
-}
-
-impl<Item> IntoIterator for TreeDeque<Item> {
-    type Item = Item;
-
-    type IntoIter = IntoIter<Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.into()
-    }
+#[derive(Debug, Clone)]
+pub enum TreeDeque<Token> {
+    Leaf(Token),
+    Node(VecDeque<TreeDeque<Token>>),
 }

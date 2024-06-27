@@ -1,197 +1,24 @@
-//! # iter-tree
-//!
-//! This library provides an easy way to convert between iterators and tree structures in both directions. This can be useful when building simple parsers to convert a stream of token into a tree of token.
-//!
-//! It extends iterators with two functions : 
-//! 
-//! - [`tree`](tree::Treeable::tree) that maps the iterator to an iterator of [`Tree`](tree::Tree) that can be collected to a [`Tree`](tree::Tree).
-//! 
-//! - [`tree_deque`](tree_deque::TreeDequeable::tree_deque) that maps the iterator to an iterator of [`TreeDeque`](tree_deque::TreeDeque) that can be collected to a [`TreeDeque`](tree_deque::TreeDeque).
-//!   
-//!    To get this one, you have to activate the `deque` feature flag.
-//!
-//! Both type of trees implement the [`IntoIterator`] trait.
-//!
-//! ## Usage
-//!
-//! The creation of a tree is controlled with the [`BranchControl`](controller::BranchControl) enum.
-//! This enum has three variants :
-//!
-//! - [`BranchControl::Start`](controller::BranchControl::Start)
-//!   - Is used to start nesting the items of the iterator into a new branch.
-//! - [`BranchControl::Continue`](controller::BranchControl::Continue)
-//!   - Is used to keep the item in the same branch as the previous ones
-//! - [`BranchControl::End`](controller::BranchControl::End)
-//!   - Is used to get back up to the previous branch to put the next items.
-//!
-//! Note:
-//!
-//! When filling a branch started with [`BranchControl::Start`](controller::BranchControl::Start), no crash or error will happens if the iterator ends before encountering the corresponding [`BranchControl::End`](controller::BranchControl::End).
-//! Similarly, any unmatched [`BranchControl::End`](controller::BranchControl::End) will simply be ignored.
-//!
-//! If you want to check for these kind of situations, you can use a trick such as the depth counter showed in the below example.
-//!
-//! ## Example
-//!
-//! ```rust
-//! use iter_tree::prelude::*;
-//!
-//! let mut depth = 0;
-//!
-//! let before = String::from("a+(b+c)+d");
-//!
-//! let tree: Tree<char> = before
-//!     .chars()
-//!     .into_iter()
-//!     .tree(|&item: &char| match item {
-//!         '(' => {
-//!             depth += 1;
-//!             BranchControl::Start
-//!         },
-//!         ')' => { 
-//!             depth -= 1;
-//!             BranchControl::End
-//!         },
-//!         _ => BranchControl::Continue,
-//!     })
-//!     .collect();
-//!
-//! println!("{tree:#?}");
-//!
-//! let after: String = tree.into_iter().collect();
-//!
-//! assert_eq!(before, after);
-//! ```
-//!
-//! ```bash
-//! Branch(
-//!     [
-//!         Leaf(
-//!             'a',
-//!         ),
-//!         Leaf(
-//!             '+',
-//!         ),
-//!         Branch(
-//!             [
-//!                 Leaf(
-//!                     '(',
-//!                 ),
-//!                 Leaf(
-//!                     'b',
-//!                 ),
-//!                 Leaf(
-//!                     '+',
-//!                 ),
-//!                 Leaf(
-//!                     'c',
-//!                 ),
-//!                 Leaf(
-//!                     ')',
-//!                 ),
-//!             ],
-//!         ),
-//!         Leaf(
-//!             '+',
-//!         ),
-//!         Leaf(
-//!             'd',
-//!         ),
-//!     ],
-//! )
-//! ```
-//!
-//! #### [`Controller`](controller::Controller)s
-//!
-//! Additionally you can create a struct that implements the [`Controller`](controller::Controller) trait to replace the closure from the previous example.
-//!
-//! Here is an example of how this can be applied :
-//!
-//! ```rust
-//! use iter_tree::prelude::*;
-//!
-//! #[derive(Default)]
-//! struct StackController<T> {
-//!     stack: Vec<T>,
-//! }
-//!
-//! impl<T> StackController<T> {
-//!     pub fn is_empty(self) -> bool {
-//!         self.stack.is_empty()
-//!     }
-//! }
-//!
-//! impl Controller<char> for &mut StackController<char> {
-//!     fn control_branch(&mut self, item: &char) -> BranchControl {
-//!         let &c = item;
-//!         match c {
-//!             '<' => {
-//!                 self.stack.push(c);
-//!                 BranchControl::Start
-//!             }
-//!             '(' => {
-//!                 self.stack.push(c);
-//!                 BranchControl::Start
-//!             }
-//!             '>' => {
-//!                 if self.stack.len() > 0 && self.stack.last().unwrap() == &'<' {
-//!                     self.stack.pop();
-//!                     BranchControl::End
-//!                 } else {
-//!                     BranchControl::Continue
-//!                 }
-//!             }
-//!             ')' => {
-//!                 if self.stack.len() > 0 && self.stack.last().unwrap() == &'(' {
-//!                     self.stack.pop();
-//!                     BranchControl::End
-//!                 } else {
-//!                     BranchControl::Continue
-//!                 }
-//!             }
-//!             _ => BranchControl::Continue,
-//!         }
-//!     }
-//! }
-//!
-//!
-//! let mut controller = StackController::default();
-//!
-//! let _1 = "< ( < > ) >"
-//!     .chars()
-//!     .tree(&mut controller)
-//!     .collect::<Tree<char>>();
-//!
-//! assert!(controller.is_empty());
-//!
-//! let mut controller = StackController::default();
-//!
-//! let _b = "<(>)".chars().tree(&mut controller).collect::<Tree<_>>();
-//!
-//! assert!(!controller.is_empty())
-//! ```
-//!
-//! ## What's next ?
-//!
-//! The goals for the future of this crate includes but are not limited to :
-//!
-//! - Adding more methods to build Trees such as for example a `tree_map` and `tree_deque_map` method that would map the item before including it in the Tree.
-//!
-//! - Providing other types of Trees, notably some that separate the item that inited and terminated a branch.
+#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::unwrap_used)]
+#![allow(clippy::module_name_repetitions, clippy::ignored_unit_patterns)]
+#![forbid(unsafe_code)]
+#![doc = include_str!("../README.md")]
 
-pub mod controller;
-
-#[cfg(any(feature = "deque", doc))]
-pub mod tree_deque;
-
+mod nesting_function;
 #[cfg(feature = "vec")]
-pub mod tree;
+mod tree;
+#[cfg(feature = "deque")]
+mod tree_deque;
 
-pub mod prelude;
+pub use nesting_function::*;
+#[cfg(feature = "vec")]
+pub use tree::*;
+#[cfg(feature = "deque")]
+pub use tree_deque::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    #![allow(unused)]
+    use super::{Nesting, NestingFunction};
 
     #[derive(Debug, Default)]
     struct StackController<T> {
@@ -199,113 +26,72 @@ mod tests {
     }
 
     impl<T> StackController<T> {
-        pub fn is_empty(self) -> bool {
+        pub fn is_empty(&self) -> bool {
             self.stack.is_empty()
         }
     }
 
-    impl Controller<char> for &mut StackController<char> {
-        fn control_branch(&mut self, item: &char) -> BranchControl {
+    impl NestingFunction<char> for &mut StackController<char> {
+        fn direction(&mut self, item: &char) -> Nesting {
             let &c = item;
             match c {
-                '<' => {
+                '<' | '(' => {
                     self.stack.push(c);
-                    BranchControl::Start
+                    Nesting::Increase
                 }
-                '(' => {
-                    self.stack.push(c);
-                    BranchControl::Start
-                }
-                '>' => {
-                    if self.stack.len() > 0 && self.stack.last().unwrap() == &'<' {
+                '>' =>
+                {
+                    #[allow(clippy::unwrap_used)]
+                    if !self.stack.is_empty() && self.stack.last().unwrap() == &'<' {
                         self.stack.pop();
-                        BranchControl::End
+                        Nesting::Decrease
                     } else {
-                        BranchControl::Continue
+                        Nesting::Maintain
                     }
                 }
-                ')' => {
-                    if self.stack.len() > 0 && self.stack.last().unwrap() == &'(' {
+                ')' =>
+                {
+                    #[allow(clippy::unwrap_used)]
+                    if !self.stack.is_empty() && self.stack.last().unwrap() == &'(' {
                         self.stack.pop();
-                        BranchControl::End
+                        Nesting::Decrease
                     } else {
-                        BranchControl::Continue
+                        Nesting::Maintain
                     }
                 }
-                _ => BranchControl::Continue,
+                _ => Nesting::Maintain,
             }
         }
     }
 
     #[cfg(feature = "vec")]
-    mod tree {
-        use crate::{
-            controller::BranchControl,
-            tests::StackController,
-            tree::{Tree, Treeable},
-        };
+    mod vec {
+        use super::*;
+        use crate::{IntoTreeExt, Tree};
 
         #[test]
         fn basic() {
-            let mut depth = 0;
-
-            let tree = "a+(b+c)+d"
+            let tree: Tree<char> = "a * ( (d + b) * c ) + e"
                 .chars()
-                .into_iter()
-                .tree(|&item: &char| match item {
-                    '(' => {
-                        depth += 1;
-                        BranchControl::Start
-                    }
-                    ')' => {
-                        depth -= 1;
-                        BranchControl::End
-                    }
-                    _ => BranchControl::Continue,
-                })
-                .collect::<Tree<char>>();
+                .filter(|&c: &char| !c.is_whitespace())
+                .into_tree(|&c: &char| match c {
+                    '(' => Nesting::Increase,
+                    ')' => Nesting::Decrease,
+                    _ => Nesting::Maintain,
+                });
 
             println!("{tree:#?}");
-
-            assert_eq!(0, depth);
         }
 
         #[test]
-        fn correct() {
-            let mut controller = StackController::default();
+        fn iter() {
+            let before = String::from("a+(b+c)+d");
 
-            let _1 = "< ( < > ) >"
-                .chars()
-                .tree(&mut controller)
-                .collect::<Tree<char>>();
-
-            assert!(controller.is_empty());
-        }
-
-        #[test]
-        fn incorrect() {
-            let mut controller = StackController::default();
-
-            let _b = "<(>)".chars().tree(&mut controller).collect::<Tree<_>>();
-
-            assert!(!controller.is_empty());
-        }
-
-        #[test]
-        fn into_iter() {
-            let before = String::from("a(b(c)d)e");
-
-            let tree = before
-                .chars()
-                .into_iter()
-                .tree(|&item: &char| match item {
-                    '(' => BranchControl::Start,
-                    ')' => BranchControl::End,
-                    _ => BranchControl::Continue,
-                })
-                .collect::<Tree<char>>();
-
-            println!("{tree:#?}");
+            let tree = before.chars().into_tree(|&item: &char| match item {
+                '(' => Nesting::Increase,
+                ')' => Nesting::Decrease,
+                _ => Nesting::Maintain,
+            });
 
             let after: String = tree.into_iter().collect();
 
@@ -313,92 +99,80 @@ mod tests {
         }
 
         #[test]
-        fn into_iter_incorrect() {
-            let mut parser = StackController::default();
-
-            let before = String::from("<(>)");
-
-            let tree = before.chars().tree(&mut parser).collect::<Tree<_>>();
-
-            let after: String = tree.into_iter().collect();
-
-            assert_eq!(before, after);
-            assert!(!parser.is_empty());
-        }
-    }
-
-    #[cfg(feature = "deque")]
-    mod tree_deque {
-
-        use crate::{
-            controller::BranchControl,
-            tests::StackController,
-            tree_deque::{TreeDeque, TreeDequeable},
-        };
-
-        #[test]
-        fn basic() {
+        fn with_fn_mut() {
             let mut depth = 0;
-            let tree = "a+b+(c+(d+e)+f)+g"
-                .chars()
-                .into_iter()
-                .tree_deque(|&item: &char| match item {
-                    '(' => {
-                        depth += 1;
-                        BranchControl::Start
-                    }
-                    ')' => {
-                        depth -= 1;
-                        BranchControl::End
-                    }
-                    _ => BranchControl::Continue,
-                })
-                .collect::<TreeDeque<char>>();
+
+            let tree: Tree<char> = "a+(b+c)+d".chars().into_tree(|&item: &char| match item {
+                '(' => {
+                    depth += 1;
+                    Nesting::Increase
+                }
+                ')' => {
+                    depth -= 1;
+                    Nesting::Decrease
+                }
+                _ => Nesting::Maintain,
+            });
+
+            assert!(depth == 0);
 
             println!("{tree:#?}");
-
-            assert_eq!(0, depth);
         }
 
         #[test]
-        fn correct() {
+        fn correct_stack() {
             let mut parser = StackController::default();
 
-            let _1 = "< ( < > ) >"
+            let td = "< ( < > ) >"
                 .chars()
-                .tree_deque(&mut parser)
-                .collect::<TreeDeque<char>>();
+                .filter(|c| !c.is_whitespace())
+                .into_tree(&mut parser);
+
+            println!("{td:#?}");
 
             assert!(parser.is_empty());
         }
 
         #[test]
-        fn incorrect() {
+        fn incorrect_stack() {
             let mut parser = StackController::default();
 
-            let _b = "<(>)"
-                .chars()
-                .tree_deque(&mut parser)
-                .collect::<TreeDeque<_>>();
+            let td = "<(>)".chars().into_tree(&mut parser);
+
+            println!("{td:#?}");
 
             assert!(!parser.is_empty());
         }
+    }
+
+    #[cfg(feature = "deque")]
+    mod deque {
+        use super::*;
+        use crate::{IntoTreeDequeExt, TreeDeque};
 
         #[test]
-        fn into_iter() {
-            let before = String::from("a(b(c)d)e");
-
-            let tree = before
+        fn basic() {
+            let tree: TreeDeque<char> = "a * ( (d + b) * c ) + e"
                 .chars()
-                .into_iter()
-                .tree_deque(|&item: &char| match item {
-                    '(' => BranchControl::Start,
-                    ')' => BranchControl::End,
-                    _ => BranchControl::Continue,
-                })
-                .collect::<TreeDeque<char>>();
+                .filter(|&c: &char| !c.is_whitespace())
+                .into_tree_deque(|&c: &char| match c {
+                    '(' => Nesting::Increase,
+                    ')' => Nesting::Decrease,
+                    _ => Nesting::Maintain,
+                });
 
             println!("{tree:#?}");
+        }
+
+        #[test]
+        fn iter() {
+            let before = String::from("a+(b+c)+d");
+
+            let tree = before.chars().into_tree_deque(|&item: &char| match item {
+                '(' => Nesting::Increase,
+                ')' => Nesting::Decrease,
+                _ => Nesting::Maintain,
+            });
 
             let after: String = tree.into_iter().collect();
 
@@ -406,19 +180,27 @@ mod tests {
         }
 
         #[test]
-        fn into_iter_incorrect() {
+        fn correct_stack() {
             let mut parser = StackController::default();
 
-            let before = String::from("<(>)");
-
-            let tree = before
+            let td = "< ( < > ) >"
                 .chars()
-                .tree_deque(&mut parser)
-                .collect::<TreeDeque<_>>();
+                .filter(|c| !c.is_whitespace())
+                .into_tree_deque(&mut parser);
 
-            let after: String = tree.into_iter().collect();
+            println!("{td:#?}");
 
-            assert_eq!(before, after);
+            assert!(parser.is_empty());
+        }
+
+        #[test]
+        fn incorrect_stack() {
+            let mut parser = StackController::default();
+
+            let td = "<(>)".chars().into_tree_deque(&mut parser);
+
+            println!("{td:#?}");
+
             assert!(!parser.is_empty());
         }
     }

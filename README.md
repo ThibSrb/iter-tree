@@ -1,60 +1,53 @@
 # iter-tree
 
-This library provides an easy way to convert between iterators and tree structures in both directions. This can be useful when building simple parsers to convert a stream of token into a tree of token.
+This library provides an easy way to convert between iterators and tree structures. This can be useful when building parsers to convert a stream of token into a tree of token.
 
 It extends iterators with two functions : 
 
-- `tree` that maps the iterator to an iterator of Tree that can be collected to a `Tree`.
+- [`into_tree`](`IntoTreeExt::into_tree`) that transforms an iterator into a [`Tree`].
 
-- `tree_deque` that maps the iterator to an iterator of `TreeDeque` that can be collected to a `TreeDeque`.
+- [`into_tree_deque`](`IntoTreeDequeExt::into_tree_deque`) that transforms an iterator into a [`TreeDeque`].
   
    To get this one, you have to activate the `deque` feature flag.
 
-Both type of trees implement the `IntoIterator` trait.
+Both type of trees implement the [`IntoIterator`] trait.
 
 ## Usage
 
-The creation of a tree is controlled with the `BranchControl` enum.
+The creation of a tree is controlled with the [`Nesting`] enum.
 This enum has three variants :
 
-- `BranchControl::Start`
-  - Is used to start nesting the items of the iterator into a new branch.
-- `BranchControl::Continue`
-  - Is used to keep the item in the same branch as the previous ones
-- `BranchControl::End`
-  - Is used to get back up to the previous branch to put the next items.
-
-Note:
-
-When filling a branch started with `BranchControl::Start`, no crash or error will happens if the iterator ends before encountering the corresponding `BranchControl::End`.
-Similarly, any unmatched `BranchControl::End` will simply be ignored.
+- [`Nesting::Increase`]
+  - Is used to start nesting the items of the iterator into a new node.
+- [`Nesting::Maintain`]
+  - Is used to keep the item in the same node as the previous ones
+- [`Nesting::Decrease`]
+  - Is used to get back up to the previous node to put the next items. If there is no previous branch a new parent branch is then created.
 
 If you want to check for these kind of situations, you can use a trick such as the depth counter showed in the below example.
 
 ## Example
 
 ```rust
-use iter_tree::prelude::*;
+use iter_tree::*;
 
 let mut depth = 0;
 
 let before = String::from("a+(b+c)+d");
 
-let tree: Tree<char> = before
-    .chars()
-    .into_iter()
-    .tree(|&item: &char| match item {
-        '(' => {
-            depth += 1;
-            BranchControl::Start
-        },
-        ')' => { 
-            depth -= 1;
-            BranchControl::End
-        },
-        _ => BranchControl::Continue,
-    })
-    .collect();
+let tree: Tree<char> = before.chars().into_tree(|&item: &char| match item {
+    '(' => {
+        depth += 1;
+        Nesting::Increase
+    }
+    ')' => {
+        depth -= 1;
+        Nesting::Decrease
+    }
+    _ => Nesting::Maintain,
+});
+
+assert!(depth == 0);
 
 println!("{tree:#?}");
 
@@ -64,7 +57,7 @@ assert_eq!(before, after);
 ```
 
 ```bash
-Branch(
+Node(
     [
         Leaf(
             'a',
@@ -72,7 +65,7 @@ Branch(
         Leaf(
             '+',
         ),
-        Branch(
+        Node(
             [
                 Leaf(
                     '(',
@@ -101,74 +94,74 @@ Branch(
 )
 ```
 
-#### `Controller`s
+#### [`NestingFunction`]s
 
-Additionally you can create a struct that implements the `Controller` trait to replace the closure from the previous example.
+Additionally you can create a struct that implements the [`NestingFunction`] trait to replace the closure from the previous example.
 
 Here is an example of how this can be applied :
 
 ```rust
-use iter_tree::prelude::*;
+use iter_tree::*;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct StackController<T> {
     stack: Vec<T>,
 }
 
 impl<T> StackController<T> {
-    pub fn is_empty(self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.stack.is_empty()
     }
 }
 
-impl Controller<char> for &mut StackController<char> {
-    fn control_branch(&mut self, item: &char) -> BranchControl {
+impl NestingFunction<char> for &mut StackController<char> {
+    fn direction(&mut self, item: &char) -> Nesting {
         let &c = item;
         match c {
-            '<' => {
+            '<' | '(' => {
                 self.stack.push(c);
-                BranchControl::Start
-            }
-            '(' => {
-                self.stack.push(c);
-                BranchControl::Start
+                Nesting::Increase
             }
             '>' => {
-                if self.stack.len() > 0 && self.stack.last().unwrap() == &'<' {
+                if !self.stack.is_empty() && self.stack.last().unwrap() == &'<' {
                     self.stack.pop();
-                    BranchControl::End
+                    Nesting::Decrease
                 } else {
-                    BranchControl::Continue
+                    Nesting::Maintain
                 }
             }
             ')' => {
-                if self.stack.len() > 0 && self.stack.last().unwrap() == &'(' {
+                if !self.stack.is_empty() && self.stack.last().unwrap() == &'(' {
                     self.stack.pop();
-                    BranchControl::End
+                    Nesting::Decrease
                 } else {
-                    BranchControl::Continue
+                    Nesting::Maintain
                 }
             }
-            _ => BranchControl::Continue,
+            _ => Nesting::Maintain,
         }
     }
 }
 
+let mut parser = StackController::default();
 
-let mut controller = StackController::default();
-
-let _1 = "< ( < > ) >"
+let td = "< ( < > ) >"
     .chars()
-    .tree(&mut controller)
-    .collect::<Tree<char>>();
+    .filter(|c| !c.is_whitespace())
+    .into_tree(&mut parser);
 
-assert!(controller.is_empty());
+assert!(parser.is_empty());
+println!("{td:#?}");
 
-let mut controller = StackController::default();
 
-let _b = "<(>)".chars().tree(&mut controller).collect::<Tree<_>>();
 
-assert!(!controller.is_empty())
+
+let mut parser = StackController::default();
+
+let td = "<(>)".chars().into_tree(&mut parser);
+
+assert!(!parser.is_empty());
+println!("{td:#?}");
 ```
 
 ## What's next ?

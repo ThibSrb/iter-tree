@@ -1,26 +1,10 @@
-mod adapter;
-mod into_iter;
-pub use adapter::Treeable;
-use into_iter::IntoIter;
+mod into_tree;
+mod iter;
 
-#[derive(Debug)]
-pub enum Tree<T> {
-    Leaf(T),
-    Branch(Vec<Tree<T>>),
-}
+pub use into_tree::IntoTreeExt;
 
-impl<Item> FromIterator<Tree<Item>> for Tree<Item> {
-    fn from_iter<T: IntoIterator<Item = Tree<Item>>>(iter: T) -> Self {
-        Tree::Branch(Vec::from_iter(iter))
-    }
-}
-
-impl<Item> IntoIterator for Tree<Item> {
-    type Item = Item;
-
-    type IntoIter = IntoIter<Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.into()
-    }
+#[derive(Debug, Clone)]
+pub enum Tree<Token> {
+    Leaf(Token),
+    Node(Vec<Tree<Token>>),
 }
